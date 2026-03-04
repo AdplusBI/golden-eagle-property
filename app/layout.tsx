@@ -1,23 +1,15 @@
 import type { Metadata } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import AdminButton from '@/components/admin/AdminButton'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const playfair = Playfair_Display({ 
-  subsets: ['latin'], 
-  variable: '--font-playfair',
-  display: 'swap',
-})
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Golden Eagle Properties - Luxury Real Estate in Lilongwe',
-  description: 'Discover luxury properties for sale, rent, and BnB accommodations in Lilongwe, Malawi. Your trusted partner in real estate.',
-  icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
-  },
+  title: 'Golden Eagle Properties',
+  description: 'Find your dream property in Lilongwe',
 }
 
 export default function RootLayout({
@@ -26,14 +18,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en">
       <body className={inter.className}>
         <div className="min-h-screen flex flex-col">
           <Header />
-          <main className="flex-grow pt-20">
+          <main className="flex-grow">
             {children}
           </main>
           <Footer />
+          <AdminButton />
         </div>
       </body>
     </html>

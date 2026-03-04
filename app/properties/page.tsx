@@ -1,21 +1,18 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PropertyGrid from '@/components/PropertyGrid';
-import PropertyFilters from '@/components/PropertyFilters';
-import { properties, Property } from '@/data/properties';
-
-interface Filters {
-  minPrice: string;
-  maxPrice: string;
-  bedrooms: string;
-  bathrooms: string;
-  location: string;
-}
+import PropertyFilters, { Filters } from '@/components/PropertyFilters'; // Fixed import
+import { getProperties } from '@/lib/api';
+import type { Property } from '@/types/property';
+import { Loader2 } from 'lucide-react';
 
 function PropertiesContent() {
   const searchParams = useSearchParams();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
     minPrice: '',
     maxPrice: '',
@@ -23,10 +20,32 @@ function PropertiesContent() {
     bathrooms: '',
     location: '',
   });
-  
-  // Derive filtered properties from source data
-  const getFilteredProperties = (): Property[] => {
-    const typeParam = searchParams.get('type');
+
+  // Fetch properties on mount
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setLoading(true);
+      try {
+        const data = await getProperties();
+        setProperties(data);
+        setFilteredProperties(data);
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  // Get type from URL params
+  const typeParam = searchParams.get('type');
+
+  // Filter properties whenever filters or type changes
+  useEffect(() => {
+    if (!properties.length) return;
+
     let filtered = [...properties];
 
     // Apply type filter from URL if present
@@ -59,16 +78,14 @@ function PropertiesContent() {
       );
     }
 
-    return filtered;
-  };
+    setFilteredProperties(filtered);
+  }, [filters, typeParam, properties]);
 
-  const filteredProperties = getFilteredProperties();
-
-  const handleFilterChange = (newFilters: Filters) => {
+  const handleFilterChange = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
-  };
+  }, []);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
       minPrice: '',
       maxPrice: '',
@@ -76,7 +93,18 @@ function PropertiesContent() {
       bathrooms: '',
       location: '',
     });
-  };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-12 h-12 text-gold-500 animate-spin mb-4" />
+          <p className="text-gray-600">Loading properties...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -90,7 +118,7 @@ function PropertiesContent() {
       <PropertyFilters onFilterChange={handleFilterChange} />
       
       {filteredProperties.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <div className="text-center py-12 bg-white rounded-2xl shadow-lg">
           <h3 className="text-2xl font-semibold text-gray-600 mb-2">No Properties Found</h3>
           <p className="text-gray-500">Try adjusting your filters or check back later.</p>
           <button
@@ -111,11 +139,9 @@ export default function PropertiesPage() {
   return (
     <Suspense fallback={
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-gold-500 border-r-transparent"></div>
-            <p className="mt-4 text-gray-600">Loading properties...</p>
-          </div>
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-12 h-12 text-gold-500 animate-spin mb-4" />
+          <p className="text-gray-600">Loading properties...</p>
         </div>
       </div>
     }>

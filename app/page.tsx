@@ -1,20 +1,27 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Hero from '@/components/Hero';
 import PropertyGrid from '@/components/PropertyGrid';
-import { properties } from '@/data/properties';
+import { getProperties } from '@/lib/api';
+import type { Property } from '@/types/property';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home as HomeIcon, Building2, Hotel, TrendingUp, Users, Star, ArrowRight, Shield, Clock, Award } from 'lucide-react';
-
-// Optimized image URLs
-const serviceImages = {
-  buy: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
-  rent: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
-  bnb: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
-  stats: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75',
-};
+import { Home as HomeIcon, Building2, Hotel, TrendingUp, Users, Star, ArrowRight, Shield, Clock, Award, Loader2 } from 'lucide-react';
 
 export default function Home() {
-  const featuredProperties = properties.slice(0, 6);
+  const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      const data = await getProperties();
+      setFeaturedProperties(data.slice(0, 6));
+      setLoading(false);
+    };
+
+    fetchFeatured();
+  }, []);
 
   const stats = [
     { label: 'Properties Sold', value: '500+', icon: TrendingUp, color: 'from-blue-400 to-blue-500' },
@@ -28,21 +35,21 @@ export default function Home() {
       description: 'Find your dream home or investment property in prime locations across Lilongwe.',
       icon: HomeIcon,
       link: '/properties?type=sale',
-      image: serviceImages.buy,
+      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
     },
     {
       title: 'Rent Properties',
       description: 'Quality rental properties for both residential and commercial purposes.',
       icon: Building2,
       link: '/properties?type=rent',
-      image: serviceImages.rent,
+      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
     },
     {
       title: 'BnB Stays',
       description: 'Comfortable short-term accommodations for tourists and business travelers.',
       icon: Hotel,
       link: '/properties?type=bnb',
-      image: serviceImages.bnb,
+      image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
     },
   ];
 
@@ -52,11 +59,22 @@ export default function Home() {
     { icon: Award, title: 'Best Prices', description: 'Competitive market rates', color: 'bg-purple-50 text-purple-600' },
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-gold-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading Golden Eagle Properties...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-cream-50">
       <Hero />
 
-      {/* Features Section - Light */}
+      {/* Features Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -76,7 +94,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Services Section - Light with Images */}
+      {/* Services Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -109,7 +127,6 @@ export default function Home() {
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
                     loading="lazy"
-                    quality={75}
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
@@ -132,7 +149,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Properties - Light */}
+      {/* Featured Properties */}
       <section className="py-20 bg-gradient-to-b from-cream-50 to-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -146,7 +163,13 @@ export default function Home() {
             </p>
           </div>
 
-          <PropertyGrid properties={featuredProperties} />
+          {featuredProperties.length > 0 ? (
+            <PropertyGrid properties={featuredProperties} />
+          ) : (
+            <div className="text-center py-12 bg-white rounded-2xl shadow-lg">
+              <p className="text-gray-500">No featured properties available at the moment.</p>
+            </div>
+          )}
           
           <div className="text-center mt-12">
             <Link
@@ -160,16 +183,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Section - Light with Image */}
+      {/* Stats Section */}
       <section className="py-20 relative overflow-hidden">
         <div className="absolute inset-0">
           <Image
-            src={serviceImages.stats}
+            src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75"
             alt="Luxury property"
             fill
             className="object-cover opacity-10"
             loading="lazy"
-            quality={60}
           />
         </div>
 
@@ -191,7 +213,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section - Light Gold Gradient */}
+      {/* CTA Section */}
       <section className="py-20 gold-gradient">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">

@@ -5,15 +5,8 @@ import Property from '@/models/Property';
 export async function GET() {
   try {
     await connectDB();
-    const properties = await Property.find({}).sort({ createdAt: -1 }).lean();
-    
-    // Convert MongoDB _id to string and remove __v
-    const formattedProperties = properties.map(prop => ({
-      ...prop,
-      _id: prop._id.toString(),
-    }));
-    
-    return NextResponse.json(formattedProperties);
+    const properties = await Property.find({}).sort({ createdAt: -1 });
+    return NextResponse.json(properties);
   } catch (error) {
     console.error('Error fetching properties:', error);
     return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 });
@@ -25,11 +18,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     await connectDB();
     const property = await Property.create(body);
-    
-    return NextResponse.json({
-      ...property.toObject(),
-      _id: property._id.toString(),
-    }, { status: 201 });
+    return NextResponse.json(property, { status: 201 });
   } catch (error) {
     console.error('Error creating property:', error);
     return NextResponse.json({ error: 'Failed to create property' }, { status: 500 });

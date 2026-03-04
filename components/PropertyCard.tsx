@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Property } from '@/data/properties';
+import { Property } from '@/types/property';
 import { Bed, Bath, Maximize2, MapPin, DollarSign, Home, Hotel, Building2, Heart } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -10,23 +10,10 @@ interface PropertyCardProps {
   property: Property;
 }
 
-// Optimized placeholder images
 const placeholderImages = [
-  {
-    src: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=75',
-    blur: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=50&q=20',
-    alt: 'Luxury home exterior'
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=75',
-    blur: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=50&q=20',
-    alt: 'Modern living room'
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=75',
-    blur: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=50&q=20',
-    alt: 'Luxury bedroom'
-  },
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=75',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=75',
+  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=75',
 ];
 
 export default function PropertyCard({ property }: PropertyCardProps) {
@@ -66,23 +53,20 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     }
   };
 
-  const imageIndex = parseInt(property.id) % placeholderImages.length;
-  const image = imageError ? placeholderImages[0] : placeholderImages[imageIndex];
+  const imageIndex = parseInt(property._id.slice(-1)) % placeholderImages.length;
+  const imageUrl = property.images?.[0] || placeholderImages[imageIndex];
 
   return (
-    <Link href={`/properties/${property.id}`}>
+    <Link href={`/properties/${property._id}`}>
       <div className="group bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer border border-gold-100">
         <div className="relative h-56 overflow-hidden">
           <Image
-            src={image.src}
-            alt={image.alt}
+            src={imageError ? placeholderImages[0] : imageUrl}
+            alt={property.title}
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-700"
             onError={() => setImageError(true)}
             loading="lazy"
-            quality={75}
-            placeholder="blur"
-            blurDataURL={image.blur}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           
