@@ -6,6 +6,11 @@ import Link from 'next/link';
 import { ArrowLeft, Save, Plus, X } from 'lucide-react';
 import ImageUploader from '@/components/admin/ImageUploader';
 
+// Define types locally to avoid import issues
+type PropertyCategory = 'residential' | 'commercial';
+type PropertyType = 'sale' | 'rent' | 'bnb' | 'office-sale' | 'office-rent';
+type PropertyStatus = 'available' | 'sold' | 'rented';
+
 export default function NewProperty() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -16,17 +21,37 @@ export default function NewProperty() {
     title: '',
     description: '',
     price: '',
-    type: 'sale',
+    propertyCategory: 'residential' as PropertyCategory,
+    type: 'sale' as PropertyType,
     bedrooms: '',
     bathrooms: '',
     area: '',
     location: '',
-    status: 'available',
+    status: 'available' as PropertyStatus,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'propertyCategory') {
+      // Reset type when category changes
+      let newType: PropertyType;
+      if (value === 'residential') {
+        newType = 'sale';
+      } else {
+        newType = 'office-sale';
+      }
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value as PropertyCategory,
+        type: newType,
+        // Ensure bedrooms has a default value for commercial
+        bedrooms: value === 'commercial' ? '1' : prev.bedrooms
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const addFeature = () => {
@@ -45,34 +70,81 @@ export default function NewProperty() {
     setLoading(true);
 
     try {
+      // Validate required fields
+      if (!formData.title || !formData.description) {
+        alert('Please fill in title and description');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.bedrooms) {
+        alert('Please enter the number of bedrooms or office spaces');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.price || !formData.area || !formData.location) {
+        alert('Please fill in all required fields');
+        setLoading(false);
+        return;
+      }
+
       // If no images uploaded, use a default placeholder
       const finalImages = images.length > 0 ? images : ['/placeholder-house.jpg'];
       
+      // Prepare the data for API
+      const propertyData = {
+        title: formData.title,
+        description: formData.description,
+        price: Number(formData.price),
+        type: formData.type,
+        propertyCategory: formData.propertyCategory,
+        bedrooms: Number(formData.bedrooms),
+        bathrooms: Number(formData.bathrooms),
+        area: Number(formData.area),
+        location: formData.location,
+        status: formData.status,
+        features: features,
+        images: finalImages,
+      };
+
+      console.log('Submitting property data:', propertyData);
+
       const res = await fetch('/api/properties', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          price: Number(formData.price),
-          bedrooms: Number(formData.bedrooms),
-          bathrooms: Number(formData.bathrooms),
-          area: Number(formData.area),
-          features,
-          images: finalImages,
-        }),
+        body: JSON.stringify(propertyData),
       });
+
+      const data = await res.json();
 
       if (res.ok) {
         router.push('/admin/dashboard');
       } else {
-        const data = await res.json();
         alert(data.error || 'Failed to create property');
+        console.error('Error response:', data);
       }
     } catch (error) {
       console.error('Error creating property:', error);
       alert('An error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Get available types based on selected category
+  const getTypeOptions = () => {
+    if (formData.propertyCategory === 'residential') {
+      return [
+        { value: 'sale', label: 'For Sale' },
+        { value: 'rent', label: 'For Rent' },
+        { value: 'bnb', label: 'BnB' },
+      ];
+    } else {
+      return [
+        { value: 'office-sale', label: 'Office for Sale' },
+        { value: 'office-rent', label: 'Office for Rent' },
+      ];
     }
   };
 
@@ -105,6 +177,7 @@ export default function NewProperty() {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+                placeholder="e.g., Modern Luxury Villa in Karen"
               />
             </div>
 
@@ -118,6 +191,7 @@ export default function NewProperty() {
                 required
                 rows={5}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+                placeholder="Describe the property in detail..."
               />
             </div>
 
@@ -127,9 +201,44 @@ export default function NewProperty() {
               <ImageUploader images={images} onChange={setImages} maxImages={10} />
             </div>
 
+            {/* Property Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Property Category *</label>
+              <select
+                name="propertyCategory"
+                value={formData.propertyCategory}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+              >
+                <option value="residential">Residential</option>
+                <option value="commercial">Commercial</option>
+              </select>
+            </div>
+
+            {/* Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Listing Type *</label>
+              <select
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+              >
+                {getTypeOptions().map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Price */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Price *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Price (MWK) * {formData.type === 'bnb' ? '(per night)' : formData.type.includes('rent') ? '(per month)' : ''}
+              </label>
               <input
                 type="number"
                 name="price"
@@ -138,28 +247,15 @@ export default function NewProperty() {
                 required
                 min="0"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+                placeholder="Enter price in Malawi Kwacha"
               />
             </div>
 
-            {/* Type */}
+            {/* Bedrooms/Office Spaces */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type *</label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
-              >
-                <option value="sale">For Sale</option>
-                <option value="rent">For Rent</option>
-                <option value="bnb">BnB</option>
-              </select>
-            </div>
-
-            {/* Bedrooms */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {formData.propertyCategory === 'residential' ? 'Bedrooms *' : 'Office Spaces/Units *'}
+              </label>
               <input
                 type="number"
                 name="bedrooms"
@@ -168,6 +264,7 @@ export default function NewProperty() {
                 required
                 min="0"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+                placeholder={formData.propertyCategory === 'residential' ? 'Number of bedrooms' : 'Number of office spaces'}
               />
             </div>
 
@@ -183,6 +280,7 @@ export default function NewProperty() {
                 min="0"
                 step="0.5"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+                placeholder="Number of bathrooms"
               />
             </div>
 
@@ -197,6 +295,7 @@ export default function NewProperty() {
                 required
                 min="0"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+                placeholder="Total area in square meters"
               />
             </div>
 
@@ -232,15 +331,22 @@ export default function NewProperty() {
 
             {/* Features */}
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Features/Amenities</label>
               <div className="flex gap-2 mb-2">
                 <input
                   type="text"
                   value={newFeature}
                   onChange={(e) => setNewFeature(e.target.value)}
-                  placeholder="Add a feature (e.g., Swimming Pool, Garden)"
+                  placeholder={formData.propertyCategory === 'residential' 
+                    ? "Add a feature (e.g., Swimming Pool, Garden, Parking)" 
+                    : "Add a feature (e.g., Meeting Rooms, Reception, Elevator)"}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addFeature();
+                    }
+                  }}
                 />
                 <button
                   type="button"

@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, Building2, Hotel, Phone, Info, Menu, X } from 'lucide-react';
+import { Home, Building2, Hotel, Phone, Info, Menu, X, Briefcase } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showOfficeMenu, setShowOfficeMenu] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,8 +20,22 @@ export default function Header() {
 
   const navItems = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/properties?type=sale', label: 'Buy', icon: Building2 },
-    { href: '/properties?type=rent', label: 'Rent', icon: Building2 },
+    { 
+      label: 'Buy', 
+      icon: Building2,
+      submenu: [
+        { href: '/properties?type=sale', label: 'Residential' },
+        { href: '/properties?type=office-sale', label: 'Offices' },
+      ]
+    },
+    { 
+      label: 'Rent', 
+      icon: Building2,
+      submenu: [
+        { href: '/properties?type=rent', label: 'Residential' },
+        { href: '/properties?type=office-rent', label: 'Offices' },
+      ]
+    },
     { href: '/properties?type=bnb', label: 'BnB', icon: Hotel },
     { href: '/about', label: 'About', icon: Info },
     { href: '/contact', label: 'Contact', icon: Phone },
@@ -56,18 +71,46 @@ export default function Header() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center space-x-2 ${
-                  isScrolled 
-                    ? 'text-gray-600 hover:text-gold-600 hover:bg-gold-50' 
-                    : 'text-white hover:bg-white/20'
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                <span>{item.label}</span>
-              </Link>
+              <div key={item.label} className="relative group">
+                {item.submenu ? (
+                  <>
+                    <button
+                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center space-x-2 ${
+                        isScrolled 
+                          ? 'text-gray-600 hover:text-gold-600 hover:bg-gold-50' 
+                          : 'text-white hover:bg-white/20'
+                      }`}
+                      onClick={() => setShowOfficeMenu(!showOfficeMenu)}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </button>
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gold-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                      {item.submenu.map((sub) => (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          className="block px-4 py-3 text-gray-600 hover:text-gold-600 hover:bg-gold-50 first:rounded-t-xl last:rounded-b-xl transition-colors"
+                        >
+                          {sub.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center space-x-2 ${
+                      isScrolled 
+                        ? 'text-gray-600 hover:text-gold-600 hover:bg-gold-50' 
+                        : 'text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                )}
+              </div>
             ))}
           </div>
 
@@ -90,17 +133,81 @@ export default function Header() {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden mt-4 space-y-2 animate-slide-down bg-white rounded-xl p-4 shadow-xl border border-gold-100">
-            {navItems.map((item) => (
+            <Link
+              href="/"
+              className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Home className="w-5 h-5" />
+              <span className="font-medium">Home</span>
+            </Link>
+            
+            <div className="px-4 py-2">
+              <p className="text-sm font-semibold text-gray-500 mb-2">BUY</p>
               <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
+                href="/properties?type=sale"
+                className="flex items-center space-x-3 px-4 py-2 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
+                <Building2 className="w-5 h-5" />
+                <span>Residential</span>
               </Link>
-            ))}
+              <Link
+                href="/properties?type=office-sale"
+                className="flex items-center space-x-3 px-4 py-2 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Briefcase className="w-5 h-5" />
+                <span>Offices</span>
+              </Link>
+            </div>
+
+            <div className="px-4 py-2">
+              <p className="text-sm font-semibold text-gray-500 mb-2">RENT</p>
+              <Link
+                href="/properties?type=rent"
+                className="flex items-center space-x-3 px-4 py-2 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Building2 className="w-5 h-5" />
+                <span>Residential</span>
+              </Link>
+              <Link
+                href="/properties?type=office-rent"
+                className="flex items-center space-x-3 px-4 py-2 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Briefcase className="w-5 h-5" />
+                <span>Offices</span>
+              </Link>
+            </div>
+
+            <Link
+              href="/properties?type=bnb"
+              className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Hotel className="w-5 h-5" />
+              <span className="font-medium">BnB</span>
+            </Link>
+            
+            <Link
+              href="/about"
+              className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Info className="w-5 h-5" />
+              <span className="font-medium">About</span>
+            </Link>
+            
+            <Link
+              href="/contact"
+              className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:text-gold-600 hover:bg-gold-50 rounded-lg transition-all"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Phone className="w-5 h-5" />
+              <span className="font-medium">Contact</span>
+            </Link>
           </div>
         )}
       </nav>

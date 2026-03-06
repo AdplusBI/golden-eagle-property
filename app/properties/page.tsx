@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PropertyGrid from '@/components/PropertyGrid';
-import PropertyFilters, { Filters } from '@/components/PropertyFilters'; // Fixed import
+import PropertyFilters, { Filters } from '@/components/PropertyFilters';
 import { getProperties } from '@/lib/api';
 import type { Property } from '@/types/property';
 import { Loader2 } from 'lucide-react';
@@ -27,6 +27,7 @@ function PropertiesContent() {
       setLoading(true);
       try {
         const data = await getProperties();
+        console.log('Fetched properties:', data);
         setProperties(data);
         setFilteredProperties(data);
       } catch (error) {
@@ -50,7 +51,26 @@ function PropertiesContent() {
 
     // Apply type filter from URL if present
     if (typeParam) {
-      filtered = filtered.filter(p => p.type === typeParam);
+      switch(typeParam) {
+        case 'sale':
+          filtered = filtered.filter(p => p.type === 'sale');
+          break;
+        case 'rent':
+          filtered = filtered.filter(p => p.type === 'rent');
+          break;
+        case 'bnb':
+          filtered = filtered.filter(p => p.type === 'bnb');
+          break;
+        case 'office-sale':
+          filtered = filtered.filter(p => p.type === 'office-sale');
+          break;
+        case 'office-rent':
+          filtered = filtered.filter(p => p.type === 'office-rent');
+          break;
+        default:
+          // If type is 'all' or anything else, show all
+          break;
+      }
     }
 
     // Apply price filters
@@ -61,14 +81,24 @@ function PropertiesContent() {
       filtered = filtered.filter(p => p.price <= Number(filters.maxPrice));
     }
 
-    // Apply bedrooms filter
+    // Apply bedrooms filter - only for residential property types
     if (filters.bedrooms && filters.bedrooms.trim() !== '') {
-      filtered = filtered.filter(p => p.bedrooms >= Number(filters.bedrooms));
+      filtered = filtered.filter(p => {
+        // Check if it's a residential property type (sale, rent, bnb)
+        const isResidential = ['sale', 'rent', 'bnb'].includes(p.type);
+        // Only apply bedroom filter to residential properties
+        return isResidential ? p.bedrooms >= Number(filters.bedrooms) : true;
+      });
     }
 
-    // Apply bathrooms filter
+    // Apply bathrooms filter - only for residential property types
     if (filters.bathrooms && filters.bathrooms.trim() !== '') {
-      filtered = filtered.filter(p => p.bathrooms >= Number(filters.bathrooms));
+      filtered = filtered.filter(p => {
+        // Check if it's a residential property type (sale, rent, bnb)
+        const isResidential = ['sale', 'rent', 'bnb'].includes(p.type);
+        // Only apply bathroom filter to residential properties
+        return isResidential ? p.bathrooms >= Number(filters.bathrooms) : true;
+      });
     }
 
     // Apply location filter
@@ -95,6 +125,40 @@ function PropertiesContent() {
     });
   }, []);
 
+  const getPageTitle = () => {
+    switch(typeParam) {
+      case 'sale':
+        return 'Properties for Sale';
+      case 'rent':
+        return 'Properties for Rent';
+      case 'bnb':
+        return 'BnB Accommodations';
+      case 'office-sale':
+        return 'Offices for Sale';
+      case 'office-rent':
+        return 'Offices for Rent';
+      default:
+        return 'All Properties';
+    }
+  };
+
+  const getPageDescription = () => {
+    switch(typeParam) {
+      case 'sale':
+        return 'Find your dream home or investment property';
+      case 'rent':
+        return 'Quality rental properties for every need';
+      case 'bnb':
+        return 'Comfortable short-term accommodations';
+      case 'office-sale':
+        return 'Prime office spaces for purchase';
+      case 'office-rent':
+        return 'Flexible office spaces for rent';
+      default:
+        return 'Browse our complete collection of properties';
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -108,12 +172,8 @@ function PropertiesContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">
-        Properties in <span className="text-gold-500">Lilongwe</span>
-      </h1>
-      <p className="text-gray-600 mb-8">
-        Find your perfect property from our extensive collection
-      </p>
+      <h1 className="text-3xl font-bold mb-2">{getPageTitle()}</h1>
+      <p className="text-gray-600 mb-8">{getPageDescription()}</p>
       
       <PropertyFilters onFilterChange={handleFilterChange} />
       
@@ -129,7 +189,12 @@ function PropertiesContent() {
           </button>
         </div>
       ) : (
-        <PropertyGrid properties={filteredProperties} />
+        <>
+          <p className="mb-4 text-gray-600">
+            Showing {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'}
+          </p>
+          <PropertyGrid properties={filteredProperties} />
+        </>
       )}
     </div>
   );

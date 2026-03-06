@@ -5,9 +5,9 @@ import { useParams } from 'next/navigation';
 import { getProperty } from '@/lib/api';
 import { Property } from '@/types/property';
 import { 
-  Bed, Bath, Maximize2, MapPin, DollarSign, 
+  Bed, Bath, Maximize2, MapPin, 
   Check, Phone, Mail, Calendar, Home, Building2, Hotel,
-  ArrowLeft, Share2, Heart, Loader2
+  ArrowLeft, Share2, Heart, Loader2, Briefcase
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,17 +16,37 @@ export default function PropertyDetailPage() {
   const params = useParams();
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
-      if (!params.id) return;
+      if (!params.id) {
+        setError('No property ID provided');
+        setLoading(false);
+        return;
+      }
       
       setLoading(true);
-      const data = await getProperty(params.id as string);
-      setProperty(data);
-      setLoading(false);
+      setError(null);
+      
+      try {
+        console.log('Fetching property with ID from params:', params.id);
+        const data = await getProperty(params.id as string);
+        
+        if (!data) {
+          setError('Property not found');
+        } else {
+          console.log('Property data set:', data);
+          setProperty(data);
+        }
+      } catch (error) {
+        console.error('Error fetching property:', error);
+        setError('Failed to load property. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchProperty();
@@ -41,18 +61,23 @@ export default function PropertyDetailPage() {
         return <Building2 className="w-5 h-5" />;
       case 'bnb':
         return <Hotel className="w-5 h-5" />;
+      case 'office-sale':
+      case 'office-rent':
+        return <Briefcase className="w-5 h-5" />;
+      default:
+        return <Home className="w-5 h-5" />;
     }
   };
 
-  const getTypeColor = () => {
+  const getTypeLabel = () => {
     if (!property) return '';
     switch (property.type) {
-      case 'sale':
-        return 'bg-green-100 text-green-800';
-      case 'rent':
-        return 'bg-blue-100 text-blue-800';
-      case 'bnb':
-        return 'bg-purple-100 text-purple-800';
+      case 'sale': return 'For Sale';
+      case 'rent': return 'For Rent';
+      case 'bnb': return 'BnB';
+      case 'office-sale': return 'Office for Sale';
+      case 'office-rent': return 'Office for Rent';
+      default: return property.type;
     }
   };
 
@@ -65,6 +90,28 @@ export default function PropertyDetailPage() {
         return 'bg-blue-500';
       case 'bnb':
         return 'bg-purple-500';
+      case 'office-sale':
+        return 'bg-orange-500';
+      case 'office-rent':
+        return 'bg-indigo-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getPriceSuffix = () => {
+    if (!property) return '';
+    switch (property.type) {
+      case 'sale':
+      case 'office-sale':
+        return '';
+      case 'rent':
+      case 'office-rent':
+        return '/mo';
+      case 'bnb':
+        return '/night';
+      default:
+        return '';
     }
   };
 
@@ -79,12 +126,16 @@ export default function PropertyDetailPage() {
     );
   }
 
-  if (!property) {
+  if (error || !property) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="max-w-md mx-auto">
-          <h1 className="text-3xl font-bold mb-4 text-gray-800">Property Not Found</h1>
-          <p className="text-gray-600 mb-8">The property you are looking for does not exist or has been removed.</p>
+          <h1 className="text-3xl font-bold mb-4 text-gray-800">
+            {error || 'Property Not Found'}
+          </h1>
+          <p className="text-gray-600 mb-8">
+            {error || 'The property you are looking for does not exist or has been removed.'}
+          </p>
           <Link
             href="/properties"
             className="inline-flex items-center bg-gold-500 hover:bg-gold-600 text-white px-6 py-3 rounded-lg transition-all hover:scale-105"
@@ -97,6 +148,9 @@ export default function PropertyDetailPage() {
     );
   }
 
+  // Safely access price with fallback
+  const price = property.price || 0;
+  
   // Use first image or placeholder
   const mainImage = property.images?.[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75';
 
@@ -119,7 +173,7 @@ export default function PropertyDetailPage() {
             <div className="relative h-[500px] overflow-hidden">
               <Image
                 src={mainImage}
-                alt={property.title}
+                alt={property.title || 'Property image'}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-700"
                 priority
@@ -133,14 +187,14 @@ export default function PropertyDetailPage() {
               <div className="absolute top-6 left-6 flex space-x-3">
                 <span className={`${getTypeBadgeColor()} text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center space-x-2 shadow-lg`}>
                   {getTypeIcon()}
-                  <span className="ml-1 capitalize">{property.type}</span>
+                  <span className="ml-1 capitalize">{getTypeLabel()}</span>
                 </span>
                 {property.status === 'available' ? (
                   <span className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
                     Available
                   </span>
                 ) : (
-                  <span className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                  <span className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg capitalize">
                     {property.status}
                   </span>
                 )}
@@ -163,13 +217,13 @@ export default function PropertyDetailPage() {
                 </button>
               </div>
 
-              {/* Price Tag */}
+              {/* Price Tag - Updated to MWK */}
               <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur rounded-full px-6 py-3 shadow-lg">
                 <div className="flex items-center text-gold-600 font-bold text-2xl">
-                  <DollarSign className="w-6 h-6" />
+                  <span className="text-sm mr-1">MWK</span>
                   <span>
-                    {property.price.toLocaleString()}
-                    {property.type === 'sale' ? '' : property.type === 'rent' ? '/mo' : '/night'}
+                    {price.toLocaleString()}
+                    {getPriceSuffix()}
                   </span>
                 </div>
               </div>
@@ -210,18 +264,24 @@ export default function PropertyDetailPage() {
 
             <div className="grid grid-cols-3 gap-4 mb-8">
               <div className="bg-gray-50 rounded-xl p-4 text-center">
-                <Bed className="w-6 h-6 text-gold-500 mx-auto mb-2" />
-                <div className="font-semibold text-gray-800">{property.bedrooms}</div>
-                <div className="text-sm text-gray-500">Bedrooms</div>
+                {property.type?.includes('office') ? (
+                  <Briefcase className="w-6 h-6 text-gold-500 mx-auto mb-2" />
+                ) : (
+                  <Bed className="w-6 h-6 text-gold-500 mx-auto mb-2" />
+                )}
+                <div className="font-semibold text-gray-800">{property.bedrooms || 0}</div>
+                <div className="text-sm text-gray-500">
+                  {property.type?.includes('office') ? 'Office Spaces' : 'Bedrooms'}
+                </div>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 text-center">
                 <Bath className="w-6 h-6 text-gold-500 mx-auto mb-2" />
-                <div className="font-semibold text-gray-800">{property.bathrooms}</div>
+                <div className="font-semibold text-gray-800">{property.bathrooms || 0}</div>
                 <div className="text-sm text-gray-500">Bathrooms</div>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 text-center">
                 <Maximize2 className="w-6 h-6 text-gold-500 mx-auto mb-2" />
-                <div className="font-semibold text-gray-800">{property.area}</div>
+                <div className="font-semibold text-gray-800">{property.area || 0}</div>
                 <div className="text-sm text-gray-500">m² Area</div>
               </div>
             </div>
@@ -231,17 +291,19 @@ export default function PropertyDetailPage() {
               <p className="text-gray-600 leading-relaxed">{property.description}</p>
             </div>
 
-            <div>
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Key Features</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {property.features.map((feature, index) => (
-                  <div key={index} className="flex items-center text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    <Check className="w-4 h-4 text-gold-500 mr-2 flex-shrink-0" />
-                    <span className="text-sm">{feature}</span>
-                  </div>
-                ))}
+            {property.features && property.features.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4 text-gray-800">Key Features</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {property.features.map((feature, index) => (
+                    <div key={index} className="flex items-center text-gray-600 bg-gray-50 p-3 rounded-lg">
+                      <Check className="w-4 h-4 text-gold-500 mr-2 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -250,9 +312,10 @@ export default function PropertyDetailPage() {
           <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-24">
             <div className="text-center mb-6">
               <div className="text-3xl font-bold text-gold-600 mb-1">
-                ${property.price.toLocaleString()}
+                <span className="text-base font-normal text-gray-500 mr-1">MWK</span>
+                {price.toLocaleString()}
                 <span className="text-base font-normal text-gray-500 ml-1">
-                  {property.type === 'sale' ? '' : property.type === 'rent' ? '/month' : '/night'}
+                  {getPriceSuffix()}
                 </span>
               </div>
               <p className="text-sm text-gray-500">+ fees and taxes</p>

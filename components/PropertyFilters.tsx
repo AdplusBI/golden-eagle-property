@@ -70,7 +70,7 @@ export default function PropertyFilters({
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label htmlFor="minPrice" className="block text-sm font-medium text-gray-700 mb-1">
-              Min Price ($)
+              Min Price (MWK)
             </label>
             <input
               id="minPrice"
@@ -86,7 +86,7 @@ export default function PropertyFilters({
 
           <div>
             <label htmlFor="maxPrice" className="block text-sm font-medium text-gray-700 mb-1">
-              Max Price ($)
+              Max Price (MWK)
             </label>
             <input
               id="maxPrice"
