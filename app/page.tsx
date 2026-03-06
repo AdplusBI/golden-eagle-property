@@ -12,12 +12,30 @@ import { Home as HomeIcon, Building2, Hotel, TrendingUp, Users, Star, ArrowRight
 export default function Home() {
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFeatured = async () => {
-      const data = await getProperties();
-      setFeaturedProperties(data.slice(0, 6));
-      setLoading(false);
+      try {
+        console.log('🏠 Home page: Fetching properties...');
+        const data = await getProperties();
+        console.log('🏠 Home page: Received properties:', data);
+        console.log('🏠 Home page: Number of properties:', data?.length || 0);
+        
+        if (data && data.length > 0) {
+          setFeaturedProperties(data.slice(0, 6));
+          console.log('🏠 Home page: Featured properties set:', data.slice(0, 6));
+        } else {
+          console.log('🏠 Home page: No properties received');
+          setError('No properties found');
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('🏠 Home page error:', err);
+        setError('Failed to load properties');
+        setLoading(false);
+      }
     };
 
     fetchFeatured();
@@ -163,11 +181,16 @@ export default function Home() {
             </p>
           </div>
 
-          {featuredProperties.length > 0 ? (
+          {error ? (
+            <div className="text-center py-12 bg-white rounded-2xl shadow-lg">
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : featuredProperties.length > 0 ? (
             <PropertyGrid properties={featuredProperties} />
           ) : (
             <div className="text-center py-12 bg-white rounded-2xl shadow-lg">
               <p className="text-gray-500">No featured properties available at the moment.</p>
+              <p className="text-sm text-gray-400 mt-2">Debug: API returned 0 properties</p>
             </div>
           )}
           

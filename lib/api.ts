@@ -1,10 +1,14 @@
 import { Property } from '@/types/property';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// DELETE THESE LINES - they are causing the problem
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export async function getProperties(): Promise<Property[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/properties`, {
+    console.log('Fetching properties from API...');
+    
+    // USE RELATIVE URL - this is the fix
+    const res = await fetch(`/api/properties`, {
       cache: 'no-store',
       next: { revalidate: 0 }
     });
@@ -14,7 +18,7 @@ export async function getProperties(): Promise<Property[]> {
     }
     
     const data = await res.json();
-    console.log('Fetched properties:', data); // Debug log
+    console.log('Fetched properties:', data);
     return data;
   } catch (error) {
     console.error('Error fetching properties:', error);
@@ -24,9 +28,10 @@ export async function getProperties(): Promise<Property[]> {
 
 export async function getProperty(id: string): Promise<Property | null> {
   try {
-    console.log('Fetching property with ID:', id); // Debug log
+    console.log('Fetching property with ID:', id);
     
-    const res = await fetch(`${API_BASE}/api/properties/${id}`, {
+    // USE RELATIVE URL
+    const res = await fetch(`/api/properties/${id}`, {
       cache: 'no-store',
       next: { revalidate: 0 }
     });
@@ -40,7 +45,7 @@ export async function getProperty(id: string): Promise<Property | null> {
     }
     
     const data = await res.json();
-    console.log('Property data received:', data); // Debug log
+    console.log('Property data received:', data);
     return data;
   } catch (error) {
     console.error('Error fetching property:', error);
