@@ -7,12 +7,16 @@ import { Property as PropertyType } from '@/types/property';
 
 export async function GET() {
   try {
+    console.log('Attempting to connect to MongoDB...');
     await connectDB();
+    console.log('Connected to MongoDB, fetching properties...');
     
     const properties = await Property.find({})
       .sort({ createdAt: -1 })
       .lean()
       .exec();
+    
+    console.log(`Found ${properties.length} properties`);
     
     // Convert MongoDB documents to plain objects
     const formattedProperties: PropertyType[] = properties.map(prop => ({
@@ -26,8 +30,17 @@ export async function GET() {
     
   } catch (error) {
     console.error('Error fetching properties:', error);
+    
+    // More detailed error response
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = error instanceof Error ? error.stack : '';
+    
     return NextResponse.json(
-      { error: 'Failed to fetch properties' },
+      { 
+        error: 'Failed to fetch properties', 
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+      },
       { status: 500 }
     );
   }
@@ -36,6 +49,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json() as Partial<PropertyType>;
+    console.log('Creating new property:', body.title);
+    
     await connectDB();
     
     // Validate required fields
@@ -54,6 +69,8 @@ export async function POST(request: Request) {
       ...body,
       status: body.status || 'available'
     });
+    
+    console.log('Property created successfully:', property._id);
     
     // If there are images, update them with the property ID
     if (body.images && body.images.length > 0) {
@@ -97,8 +114,10 @@ export async function POST(request: Request) {
       );
     }
     
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
     return NextResponse.json(
-      { error: 'Failed to create property' },
+      { error: 'Failed to create property', details: errorMessage },
       { status: 500 }
     );
   }
