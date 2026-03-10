@@ -6,10 +6,14 @@ import Link from 'next/link';
 import { ArrowLeft, Save, Plus, X } from 'lucide-react';
 import ImageUploader from '@/components/admin/ImageUploader';
 
-// Define types locally to avoid import issues
-type PropertyCategory = 'residential' | 'commercial';
+// Define types based on your schema
 type PropertyType = 'sale' | 'rent' | 'bnb' | 'office-sale' | 'office-rent';
+type PropertyCategory = 'residential' | 'commercial';
 type PropertyStatus = 'available' | 'sold' | 'rented';
+
+// Define property sub-types for UI organization
+type SaleSubType = 'home' | 'land' | 'warehouse' | 'commercial';
+type RentSubType = 'home' | 'office' | 'warehouse' | 'shop';
 
 export default function NewProperty() {
   const router = useRouter();
@@ -17,41 +21,72 @@ export default function NewProperty() {
   const [features, setFeatures] = useState<string[]>([]);
   const [newFeature, setNewFeature] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  
+  // Main type selection (sale/rent/bnb)
+  const [mainType, setMainType] = useState<'sale' | 'rent' | 'bnb'>('sale');
+  
+  // Sub-type selection based on main type
+  const [saleSubType, setSaleSubType] = useState<SaleSubType>('home');
+  const [rentSubType, setRentSubType] = useState<RentSubType>('home');
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
-    propertyCategory: 'residential' as PropertyCategory,
-    type: 'sale' as PropertyType,
-    bedrooms: '',
-    bathrooms: '',
+    bedrooms: '1', // Default value
+    bathrooms: '1', // Default value
     area: '',
     location: '',
     status: 'available' as PropertyStatus,
   });
 
+  // Determine the actual property type based on selections
+  const getPropertyType = (): PropertyType => {
+    if (mainType === 'bnb') return 'bnb';
+    
+    if (mainType === 'sale') {
+      switch (saleSubType) {
+        case 'home':
+          return 'sale';
+        case 'land':
+          return 'sale';
+        case 'warehouse':
+          return 'office-sale';
+        case 'commercial':
+          return 'office-sale';
+        default:
+          return 'sale';
+      }
+    } else { // rent
+      switch (rentSubType) {
+        case 'home':
+          return 'rent';
+        case 'office':
+          return 'office-rent';
+        case 'warehouse':
+          return 'rent';
+        case 'shop':
+          return 'rent';
+        default:
+          return 'rent';
+      }
+    }
+  };
+
+  // Determine property category based on selections
+  const getPropertyCategory = (): PropertyCategory => {
+    if (mainType === 'bnb') return 'residential';
+    
+    if (mainType === 'sale') {
+      return saleSubType === 'home' || saleSubType === 'land' ? 'residential' : 'commercial';
+    } else { // rent
+      return rentSubType === 'home' ? 'residential' : 'commercial';
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
-    if (name === 'propertyCategory') {
-      // Reset type when category changes
-      let newType: PropertyType;
-      if (value === 'residential') {
-        newType = 'sale';
-      } else {
-        newType = 'office-sale';
-      }
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        [name]: value as PropertyCategory,
-        type: newType,
-        // Ensure bedrooms has a default value for commercial
-        bedrooms: value === 'commercial' ? '1' : prev.bedrooms
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const addFeature = () => {
@@ -77,12 +112,6 @@ export default function NewProperty() {
         return;
       }
 
-      if (!formData.bedrooms) {
-        alert('Please enter the number of bedrooms or office spaces');
-        setLoading(false);
-        return;
-      }
-
       if (!formData.price || !formData.area || !formData.location) {
         alert('Please fill in all required fields');
         setLoading(false);
@@ -97,8 +126,8 @@ export default function NewProperty() {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
-        type: formData.type,
-        propertyCategory: formData.propertyCategory,
+        type: getPropertyType(),
+        propertyCategory: getPropertyCategory(),
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
@@ -132,20 +161,108 @@ export default function NewProperty() {
     }
   };
 
-  // Get available types based on selected category
-  const getTypeOptions = () => {
-    if (formData.propertyCategory === 'residential') {
-      return [
-        { value: 'sale', label: 'For Sale' },
-        { value: 'rent', label: 'For Rent' },
-        { value: 'bnb', label: 'BnB' },
-      ];
-    } else {
-      return [
-        { value: 'office-sale', label: 'Office for Sale' },
-        { value: 'office-rent', label: 'Office for Rent' },
-      ];
+  // Get label for bedrooms field based on selection
+  const getBedroomsLabel = () => {
+    if (mainType === 'bnb') return 'Bedrooms *';
+    
+    if (mainType === 'sale') {
+      switch (saleSubType) {
+        case 'home':
+          return 'Bedrooms *';
+        case 'land':
+          return 'Plot Size (acres) *';
+        case 'warehouse':
+          return 'Storage Units/Spaces *';
+        case 'commercial':
+          return 'Office Spaces/Rooms *';
+        default:
+          return 'Bedrooms *';
+      }
+    } else { // rent
+      switch (rentSubType) {
+        case 'home':
+          return 'Bedrooms *';
+        case 'office':
+          return 'Office Spaces/Rooms *';
+        case 'warehouse':
+          return 'Storage Units/Spaces *';
+        case 'shop':
+          return 'Shop Units *';
+        default:
+          return 'Bedrooms *';
+      }
     }
+  };
+
+  // Get placeholder for bedrooms field
+  const getBedroomsPlaceholder = () => {
+    if (mainType === 'bnb') return 'Number of bedrooms';
+    
+    if (mainType === 'sale') {
+      switch (saleSubType) {
+        case 'home':
+          return 'Number of bedrooms';
+        case 'land':
+          return 'Enter land size in acres';
+        case 'warehouse':
+          return 'Number of storage units/spaces';
+        case 'commercial':
+          return 'Number of office spaces/rooms';
+        default:
+          return 'Number of bedrooms';
+      }
+    } else { // rent
+      switch (rentSubType) {
+        case 'home':
+          return 'Number of bedrooms';
+        case 'office':
+          return 'Number of office spaces/rooms';
+        case 'warehouse':
+          return 'Number of storage units/spaces';
+        case 'shop':
+          return 'Number of shop units';
+        default:
+          return 'Number of bedrooms';
+      }
+    }
+  };
+
+  // Get label for bathrooms field based on selection
+  const getBathroomsLabel = () => {
+    if (shouldHideBathrooms()) {
+      return ''; // Will be hidden
+    }
+    
+    if (mainType === 'sale' && saleSubType === 'land') {
+      return ''; // Will be hidden
+    }
+    
+    if (mainType === 'rent' && (rentSubType === 'warehouse' || rentSubType === 'shop')) {
+      return 'Restrooms *';
+    }
+    
+    return 'Bathrooms *';
+  };
+
+  // Check if bathrooms field should be hidden
+  const shouldHideBathrooms = () => {
+    if (mainType === 'sale' && saleSubType === 'land') return true;
+    return false;
+  };
+
+  // Get placeholder for bathrooms field
+  const getBathroomsPlaceholder = () => {
+    if (mainType === 'rent' && (rentSubType === 'warehouse' || rentSubType === 'shop')) {
+      return 'Number of restrooms';
+    }
+    return 'Number of bathrooms';
+  };
+
+  // Get price label
+  const getPriceLabel = () => {
+    if (mainType === 'bnb') return 'Price (per night) *';
+    if (mainType === 'rent') return 'Price (per month) *';
+    return 'Price *';
   };
 
   return (
@@ -177,7 +294,7 @@ export default function NewProperty() {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
-                placeholder="e.g., Modern Luxury Villa in Karen"
+                placeholder="e.g., Modern Luxury Villa in Area"
               />
             </div>
 
@@ -201,44 +318,116 @@ export default function NewProperty() {
               <ImageUploader images={images} onChange={setImages} maxImages={10} />
             </div>
 
-            {/* Property Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Property Category *</label>
-              <select
-                name="propertyCategory"
-                value={formData.propertyCategory}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
-              >
-                <option value="residential">Residential</option>
-                <option value="commercial">Commercial</option>
-              </select>
+            {/* Main Type Selection */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Property Type *</label>
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setMainType('sale')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                    mainType === 'sale'
+                      ? 'bg-gold-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  For Sale
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMainType('rent')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                    mainType === 'rent'
+                      ? 'bg-gold-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  For Rent
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMainType('bnb')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                    mainType === 'bnb'
+                      ? 'bg-gold-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  BnB
+                </button>
+              </div>
             </div>
 
-            {/* Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Listing Type *</label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
-              >
-                {getTypeOptions().map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Sub-type Selection based on main type */}
+            {mainType === 'sale' && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Property Sub-type *</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {(['home', 'land', 'warehouse', 'commercial'] as SaleSubType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setSaleSubType(type);
+                        // Set appropriate default values
+                        if (type === 'land') {
+                          setFormData(prev => ({ ...prev, bedrooms: '1' }));
+                        } else if (type === 'warehouse' || type === 'commercial') {
+                          setFormData(prev => ({ ...prev, bedrooms: '1' }));
+                        }
+                      }}
+                      className={`py-2 px-3 rounded-lg font-medium transition-all ${
+                        saleSubType === type
+                          ? 'bg-gold-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {type === 'home' && 'Home'}
+                      {type === 'land' && 'Land'}
+                      {type === 'warehouse' && 'Warehouse'}
+                      {type === 'commercial' && 'Commercial/Office'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {mainType === 'rent' && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Property Sub-type *</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {(['home', 'office', 'warehouse', 'shop'] as RentSubType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setRentSubType(type);
+                        // Set appropriate default values
+                        if (type === 'warehouse' || type === 'shop') {
+                          setFormData(prev => ({ ...prev, bedrooms: '1' }));
+                        } else if (type === 'office') {
+                          setFormData(prev => ({ ...prev, bedrooms: '1' }));
+                        }
+                      }}
+                      className={`py-2 px-3 rounded-lg font-medium transition-all ${
+                        rentSubType === type
+                          ? 'bg-gold-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {type === 'home' && 'Home'}
+                      {type === 'office' && 'Office'}
+                      {type === 'warehouse' && 'Warehouse'}
+                      {type === 'shop' && 'Shop'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Price */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price (MWK) * {formData.type === 'bnb' ? '(per night)' : formData.type.includes('rent') ? '(per month)' : ''}
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{getPriceLabel()}</label>
               <input
                 type="number"
                 name="price"
@@ -251,11 +440,9 @@ export default function NewProperty() {
               />
             </div>
 
-            {/* Bedrooms/Office Spaces */}
+            {/* Bedrooms/Units - Always visible but with different labels */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {formData.propertyCategory === 'residential' ? 'Bedrooms *' : 'Office Spaces/Units *'}
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{getBedroomsLabel()}</label>
               <input
                 type="number"
                 name="bedrooms"
@@ -263,30 +450,35 @@ export default function NewProperty() {
                 onChange={handleChange}
                 required
                 min="0"
+                step={saleSubType === 'land' ? '0.01' : '1'}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
-                placeholder={formData.propertyCategory === 'residential' ? 'Number of bedrooms' : 'Number of office spaces'}
+                placeholder={getBedroomsPlaceholder()}
               />
             </div>
 
-            {/* Bathrooms */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms *</label>
-              <input
-                type="number"
-                name="bathrooms"
-                value={formData.bathrooms}
-                onChange={handleChange}
-                required
-                min="0"
-                step="0.5"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
-                placeholder="Number of bathrooms"
-              />
-            </div>
+            {/* Bathrooms - Hidden for land, shown with different labels for others */}
+            {!shouldHideBathrooms() && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{getBathroomsLabel()}</label>
+                <input
+                  type="number"
+                  name="bathrooms"
+                  value={formData.bathrooms}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  step="0.5"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
+                  placeholder={getBathroomsPlaceholder()}
+                />
+              </div>
+            )}
 
             {/* Area */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Area (m²) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {saleSubType === 'land' ? 'Area (acres) *' : 'Area (m²) *'}
+              </label>
               <input
                 type="number"
                 name="area"
@@ -294,8 +486,9 @@ export default function NewProperty() {
                 onChange={handleChange}
                 required
                 min="0"
+                step={saleSubType === 'land' ? '0.01' : '1'}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
-                placeholder="Total area in square meters"
+                placeholder={saleSubType === 'land' ? 'Enter area in acres' : 'Enter area in square meters'}
               />
             </div>
 
@@ -337,9 +530,7 @@ export default function NewProperty() {
                   type="text"
                   value={newFeature}
                   onChange={(e) => setNewFeature(e.target.value)}
-                  placeholder={formData.propertyCategory === 'residential' 
-                    ? "Add a feature (e.g., Swimming Pool, Garden, Parking)" 
-                    : "Add a feature (e.g., Meeting Rooms, Reception, Elevator)"}
+                  placeholder="Add a feature (e.g., Swimming Pool, Garden, Parking)"
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {

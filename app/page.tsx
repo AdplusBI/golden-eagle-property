@@ -48,28 +48,28 @@ export default function Home() {
   ];
 
   const services = [
-    {
-      title: 'Buy Properties',
-      description: 'Find your dream home or investment property in prime locations across Lilongwe.',
-      icon: HomeIcon,
-      link: '/properties?type=sale',
-      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
-    },
-    {
-      title: 'Rent Properties',
-      description: 'Quality rental properties for both residential and commercial purposes.',
-      icon: Building2,
-      link: '/properties?type=rent',
-      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
-    },
-    {
-      title: 'BnB Stays',
-      description: 'Comfortable short-term accommodations for tourists and business travelers.',
-      icon: Hotel,
-      link: '/properties?type=bnb',
-      image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
-    },
-  ];
+  {
+    title: 'Buy Properties',
+    description: 'Find your dream home, land, or commercial property in prime locations across Lilongwe.',
+    icon: HomeIcon,
+    link: '/properties?type=sale',
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
+  },
+  {
+    title: 'Rent Properties',
+    description: 'Quality rental properties including homes, offices, warehouses, and shops.',
+    icon: Building2,
+    link: '/properties?type=rent',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
+  },
+  {
+    title: 'Hotels & BnB',
+    description: 'Comfortable short-term accommodations for tourists and business travelers.',
+    icon: Hotel,
+    link: '/properties?type=bnb',
+    image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=75',
+  },
+];
 
   const features = [
     { icon: Shield, title: 'Secure Transactions', description: '100% safe and verified deals', color: 'bg-blue-50 text-blue-600' },

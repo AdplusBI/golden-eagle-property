@@ -8,8 +8,8 @@ import AdminButton from '@/components/admin/AdminButton'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Golden Eagle Properties',
-  description: 'Find your dream property in Lilongwe',
+  title: 'Golden Eagle Properties Ltd',
+  description: 'Find your dream property in Lilongwe, Malawi',
 }
 
 export default function RootLayout({

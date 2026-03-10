@@ -13,12 +13,12 @@ export default function Footer() {
               <div className="relative w-12 h-12">
                 <Image
                   src="/logo.png"
-                  alt="Golden Eagle Properties Logo"
+                  alt="Golden Eagle Properties Ltd Logo"
                   fill
                   className="object-contain"
                 />
               </div>
-              <span className="text-xl font-bold text-gold-600">Golden Eagle</span>
+              <span className="text-xl font-bold text-gold-600">Golden Eagle Properties Ltd</span>
             </div>
             <p className="text-gray-600 mb-4">
               Your trusted partner for premium properties in Lilongwe, Malawi.
@@ -44,18 +44,23 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4 text-gold-600">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/properties?type=sale" className="text-gray-600 hover:text-gold-500 transition-colors">
-                  Properties for Sale
+                <Link href="/properties?type=sale&category=residential" className="text-gray-600 hover:text-gold-500 transition-colors">
+                  Homes for Sale
                 </Link>
               </li>
               <li>
-                <Link href="/properties?type=rent" className="text-gray-600 hover:text-gold-500 transition-colors">
-                  Properties for Rent
+                <Link href="/properties?type=rent&category=residential" className="text-gray-600 hover:text-gold-500 transition-colors">
+                  Homes for Rent
+                </Link>
+              </li>
+              <li>
+                <Link href="/properties?type=office-sale" className="text-gray-600 hover:text-gold-500 transition-colors">
+                  Commercial Properties
                 </Link>
               </li>
               <li>
                 <Link href="/properties?type=bnb" className="text-gray-600 hover:text-gold-500 transition-colors">
-                  BnB Stays
+                  Hotels & BnB
                 </Link>
               </li>
               <li>
@@ -103,7 +108,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gold-100 mt-8 pt-8 text-center text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Golden Eagle Properties. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Golden Eagle Properties Ltd. All rights reserved.</p>
         </div>
       </div>
     </footer>
